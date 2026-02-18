@@ -266,6 +266,7 @@ canvas{
 <input type="date" id="charBirthDate" placeholder="Birth Date">
 <input type="date" id="charDeathDate" placeholder="Death Date">
 
+
 <div id="autoStats" style="
 background:var(--bg-card);
 padding:14px;
@@ -275,6 +276,16 @@ font-size:14px;
 color:#9aa3b2;
 ">
 </div>
+
+
+<h2 style="margin-top:20px;">Custom Fields</h2>
+
+<div id="customFieldsList"></div>
+
+<button type="button" id="addCustomFieldBtn">
++ Add Custom Field
+</button>
+
 
 
 <h2 style="margin-top:20px;">Lore Metadata</h2>
@@ -317,6 +328,15 @@ let characters = JSON.parse(localStorage.getItem("characters")) || [];
 let index = localStorage.getItem("editingCharacterIndex");
 let char = characters[index];
 let savedImageData = char?.image || null;
+customFields: [
+  {
+    id: "unique-id",
+    label: "Magic Affinity",
+    type: "text", // text | longtext | number | boolean | select
+    value: "",
+    options: [] // only used if type === "select"
+  }
+]
 
 
 /* ===== ELEMENTS ===== */
@@ -339,11 +359,14 @@ const alignmentInput = document.getElementById("charAlignment");
 const relationshipList = document.getElementById("relationshipList");
 const addRelationshipBtn = document.getElementById("addRelationshipBtn");
 const deleteBtn = document.getElementById("deleteCharacterBtn");
+const customFieldsList = document.getElementById("customFieldsList");
+const addCustomFieldBtn = document.getElementById("addCustomFieldBtn");
 
 
 
 
 let relationships = char?.relationships || [];
+let customFields = char?.customFields || [];
 
 
 
@@ -553,6 +576,8 @@ saveBtn.onclick = () => {
         origin: originInput.value,
         alignment: alignmentInput.value,
         relationships: relationships,
+        customFields: customFields,
+
 
 
         
@@ -682,6 +707,196 @@ deleteBtn.addEventListener("click", () => {
     // Redirect back to list
     window.location.href = "character.html";
 });
+
+/* ============ FIELD BUTTON ============== */
+
+addCustomFieldBtn.addEventListener("click", () => {
+
+    customFields.push({
+        id: crypto.randomUUID(),
+        label: "",
+        type: "text",
+        value: "",
+        options: []
+    });
+
+    renderCustomFields();
+});
+
+
+/* RENDERER */
+
+
+function renderCustomFields(){
+
+    customFieldsList.innerHTML = "";
+
+    customFields.forEach((field, i) => {
+
+        const wrapper = document.createElement("div");
+        wrapper.style.background = "var(--bg-card)";
+        wrapper.style.padding = "12px";
+        wrapper.style.borderRadius = "var(--radius)";
+        wrapper.style.marginBottom = "12px";
+
+        wrapper.innerHTML = `
+            <input 
+                placeholder="Field Label"
+                value="${field.label}"
+                data-index="${i}"
+                class="cf-label">
+
+            <select data-index="${i}" class="cf-type">
+                <option value="text" ${field.type==="text"?"selected":""}>Text</option>
+                <option value="longtext" ${field.type==="longtext"?"selected":""}>Long Text</option>
+                <option value="number" ${field.type==="number"?"selected":""}>Number</option>
+                <option value="boolean" ${field.type==="boolean"?"selected":""}>True / False</option>
+                <option value="select" ${field.type==="select"?"selected":""}>Dropdown</option>
+            </select>
+
+            <div class="cf-value-container" data-index="${i}"></div>
+
+            <button data-index="${i}" class="cf-delete" style="
+                margin-top:8px;
+                background:var(--danger);
+            ">Delete</button>
+        `;
+
+        customFieldsList.appendChild(wrapper);
+    });
+
+    bindCustomFieldEvents();
+    renderCustomFieldValues();
+}
+
+function renderCustomFieldValues(){
+
+    document.querySelectorAll(".cf-value-container").forEach(container => {
+
+        const i = container.dataset.index;
+        const field = customFields[i];
+
+        container.innerHTML = "";
+
+        if(field.type === "text"){
+            container.innerHTML = `
+                <input placeholder="Value"
+                value="${field.value || ""}"
+                data-index="${i}"
+                class="cf-value">
+            `;
+        }
+
+        if(field.type === "longtext"){
+            container.innerHTML = `
+                <textarea placeholder="Value"
+                data-index="${i}"
+                class="cf-value">${field.value || ""}</textarea>
+            `;
+        }
+
+        if(field.type === "number"){
+            container.innerHTML = `
+                <input type="number"
+                value="${field.value || ""}"
+                data-index="${i}"
+                class="cf-value">
+            `;
+        }
+
+        if(field.type === "boolean"){
+            container.innerHTML = `
+                <label style="display:flex; gap:8px; align-items:center;">
+                    <input type="checkbox"
+                    ${field.value ? "checked" : ""}
+                    data-index="${i}"
+                    class="cf-value-bool">
+                    True
+                </label>
+            `;
+        }
+
+        if(field.type === "select"){
+
+            const optionsString = field.options?.join(", ") || "";
+
+            container.innerHTML = `
+                <input placeholder="Options (comma separated)"
+                    value="${optionsString}"
+                    data-index="${i}"
+                    class="cf-options">
+
+                <select data-index="${i}" class="cf-value-select">
+                    ${field.options.map(opt =>
+                        `<option ${opt===field.value?"selected":""}>${opt}</option>`
+                    ).join("")}
+                </select>
+            `;
+        }
+    });
+}
+
+function bindCustomFieldEvents(){
+
+    document.querySelectorAll(".cf-label").forEach(el=>{
+        el.addEventListener("input", e=>{
+            const i = e.target.dataset.index;
+            customFields[i].label = e.target.value;
+        });
+    });
+
+    document.querySelectorAll(".cf-type").forEach(el=>{
+        el.addEventListener("change", e=>{
+            const i = e.target.dataset.index;
+            customFields[i].type = e.target.value;
+            customFields[i].value = "";
+            renderCustomFields();
+        });
+    });
+
+    document.querySelectorAll(".cf-delete").forEach(btn=>{
+        btn.addEventListener("click", e=>{
+            const i = e.target.dataset.index;
+            customFields.splice(i,1);
+            renderCustomFields();
+        });
+    });
+
+    document.querySelectorAll(".cf-value").forEach(el=>{
+        el.addEventListener("input", e=>{
+            const i = e.target.dataset.index;
+            customFields[i].value = e.target.value;
+        });
+    });
+
+    document.querySelectorAll(".cf-value-bool").forEach(el=>{
+        el.addEventListener("change", e=>{
+            const i = e.target.dataset.index;
+            customFields[i].value = e.target.checked;
+        });
+    });
+
+    document.querySelectorAll(".cf-options").forEach(el=>{
+        el.addEventListener("input", e=>{
+            const i = e.target.dataset.index;
+            customFields[i].options = e.target.value
+                .split(",")
+                .map(o=>o.trim())
+                .filter(o=>o);
+            renderCustomFieldValues();
+        });
+    });
+
+    document.querySelectorAll(".cf-value-select").forEach(el=>{
+        el.addEventListener("change", e=>{
+            const i = e.target.dataset.index;
+            customFields[i].value = e.target.value;
+        });
+    });
+}
+
+renderCustomFields();
+
 
 </script>
 
