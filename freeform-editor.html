@@ -528,8 +528,14 @@ previewBtn.addEventListener("click", () => {
         <!DOCTYPE html>
         <html>
         <head>
-            <meta http-equiv="Content-Security-Policy"
-                  content="default-src 'none'; style-src 'unsafe-inline'; img-src https: data:;">
+            <meta <meta http-equiv="Content-Security-Policy"
+content="
+default-src 'none';
+style-src 'unsafe-inline';
+img-src https: data:;
+media-src https:;
+font-src https:;
+">
             <style>
                 body {
                     background:#161a23;
