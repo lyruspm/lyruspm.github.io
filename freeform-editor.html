@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Character Manager</title>
+
+<style>
+/* =========================
+   THEME TOKENS
+========================= */
+:root{
+    --bg-main:#0f1117;
+    --bg-card:#1a1d26;
+    --bg-accent:#232734;
+
+    --accent:#5aa2ff;
+    --danger:#ff5a7a;
+
+    --radius:14px;
+
+    --space-xs:6px;
+    --space-sm:10px;
+    --space-md:16px;
+    --space-lg:24px;
+
+    --transition:0.18s ease;
+}
+
+/* =========================
+   BASE
+========================= */
+*{
+    box-sizing:border-box;
+}
+
+body{
+    background:var(--bg-main);
+    color:white;
+    font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    padding:var(--space-lg);
+    line-height:1.4;
+}
+
+/* =========================
+   CARD LAYOUT (Optional)
+========================= */
+.card{
+    background:var(--bg-card);
+    border-radius:var(--radius);
+    padding:var(--space-lg);
+}
+
+/* =========================
+   INPUTS / TEXTAREAS / SELECT
+========================= */
+input,
+textarea,
+select{
+    width:100%;
+    padding:14px;
+    margin-bottom:var(--space-md);
+    border-radius:var(--radius);
+    border:none;
+    background:var(--bg-card);
+    color:white;
+    font-size:14px;
+
+    transition:var(--transition);
+    outline:none;
+}
+
+/* Focus glow */
+input:focus,
+textarea:focus,
+select:focus{
+    background:var(--bg-accent);
+    box-shadow:0 0 0 2px var(--accent);
+}
+
+/* Textarea usability */
+textarea{
+    resize:vertical;
+    min-height:120px;
+}
+
+/* Select reset */
+select{
+    appearance:none;
+    cursor:pointer;
+}
+
+/* =========================
+   BUTTON SYSTEM
+========================= */
+button{
+    width:100%;
+    padding:16px;
+    border:none;
+    border-radius:var(--radius);
+    margin-bottom:12px;
+    font-size:16px;
+    font-weight:600;
+    cursor:pointer;
+
+    transition:var(--transition);
+}
+
+/* Variants */
+.btn-primary{
+    background:var(--accent);
+}
+
+.btn-danger{
+    background:var(--danger);
+}
+
+/* Hover / Active */
+button:hover{
+    transform:translateY(-1px);
+    filter:brightness(1.05);
+}
+
+button:active{
+    transform:translateY(0);
+    filter:brightness(.95);
+}
+
+/* =========================
+   AVATAR PREVIEW
+========================= */
+.avatarPreview{
+    width:140px;
+    height:140px;
+    border-radius:50%;
+    object-fit:cover;
+    background:var(--bg-accent);
+    display:block;
+    margin:0 auto var(--space-md) auto;
+}
+
+/* =========================
+   CANVAS EDITOR
+========================= */
+#editorContainer{
+    display:none;
+    margin-bottom:var(--space-lg);
+}
+
+canvas{
+    width:260px;
+    height:260px;
+    border-radius:50%;
+    display:block;
+    margin:0 auto var(--space-sm) auto;
+    background:#000;
+}
+
+#zoomSlider{
+    width:100%;
+    margin-bottom:var(--space-sm);
+}
+
+/* =========================
+   UTILITY HELPERS
+========================= */
+.center{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.stack > * + *{
+    margin-top:var(--space-md);
+}
+
+.hidden{
+    display:none !important;
+}
+
+/* =========================
+   MOBILE TWEAKS
+========================= */
+@media (max-width:480px){
+    body{
+        padding:var(--space-md);
+    }
+
+    canvas{
+        width:220px;
+        height:220px;
+    }
+
+    .avatarPreview{
+        width:120px;
+        height:120px;
+    }
+}
+
+/* Base button */
+.btn{
+    width:100%;
+    padding:16px;
+    border:none;
+    border-radius:var(--radius);
+    font-size:16px;
+    font-weight:600;
+    cursor:pointer;
+    transition:0.18s ease;
+}
+
+/* SAVE */
+.saveBtn{
+    background:var(--accent);
+    color:white;
+}
+
+.saveBtn:hover{
+    filter:brightness(1.1);
+}
+
+.saveBtn:active{
+    filter:brightness(.9);
+}
+
+
+/* DELETE */
+.deleteBtn{
+    background:var(--danger);
+    color:white;
+}
+
+.deleteBtn:hover{
+    filter:brightness(1.1);
+}
+
+.deleteBtn:active{
+    filter:brightness(.9);
+}
+
+
+</style>
+</head>
+
+<body>
+
+<!-- HTML START -->
+
+<h1>Edit Character</h1>
+
+<img id="avatarPreview" class="avatarPreview">
+
+<input type="file" id="charImage" accept="image/*">
+
+<div id="editorContainer">
+    <canvas id="imageCanvas" width="300" height="300"></canvas>
+    <input type="range" id="zoomSlider" min="0.5" max="3" step="0.01" value="1">
+    <button type="button" id="useImageBtn">Use Image</button>
+</div>
+
+<button type="button" id="freeformBtn" class="btn hidden">
+    Freeform Edit
+</button>
+
+<input id="charName" placeholder="Name">
+<textarea id="charDesc" placeholder="Description"></textarea>
+<input id="charTags" placeholder="Tags">
+<input id="charFolder" placeholder="Folder">
+
+<h2 style="margin-top:20px;">Life Timeline</h2>
+
+<input type="date" id="charBirthDate" placeholder="Birth Date">
+<input type="date" id="charDeathDate" placeholder="Death Date">
+
+
+<div id="autoStats" style="
+background:var(--bg-card);
+padding:14px;
+border-radius:var(--radius);
+margin-bottom:16px;
+font-size:14px;
+color:#9aa3b2;
+">
+</div>
+
+
+<h2 style="margin-top:20px;">Custom Fields</h2>
+
+<div id="customFieldsList"></div>
+
+<button type="button" id="addCustomFieldBtn">
++ Add Custom Field
+</button>
+
+
+<h2 style="margin-top:20px;">Lore Metadata</h2>
+
+<input id="charSpecies" placeholder="Species">
+<input id="charFaction" placeholder="Faction">
+<input id="charOrigin" placeholder="Origin World / Location">
+
+<select id="charAlignment">
+    <option value="">Alignment</option>
+    <option>Hero</option>
+    <option>Neutral</option>
+    <option>Villain</option>
+    <option>Anti-Hero</option>
+    <option>Anti-Villain</option>
+</select>
+
+
+<div class="form-section">
+    <h3>Abilities</h3>
+
+    <div id="abilityList"></div>
+
+    <button type="button" id="addAbilityBtn">+ Add Ability</button>
+</div>
+
+
+
+<h2 style="margin-top:20px;">Relationships</h2>
+
+<div id="relationshipList"></div>
+
+<button type="button" id="addRelationshipBtn">
++ Add Relationship
+</button>
+
+<button class="saveBtn" id="saveBtn">Save Changes</button>
+<button class="btn deleteBtn" id="deleteCharacterBtn">
+    Delete Character
+</button>
+
+
+
+
+
+
+
+<!-- HTML END -->
+
+
+
+
+<!-- JAVA SCRIPT -->
+
+<script>
+
+/* =============================
+   STATE LOAD
+============================= */
+let characters = JSON.parse(localStorage.getItem("characters")) || [];
+let editingId = localStorage.getItem("editingCharacterId");
+let char = characters.find(c => c.id === editingId) || null;
+
+let savedImageData = char?.image || null;
+
+let relationships = char?.relationships || [];
+let customFields = char?.customFields || [];
+let abilities = char?.abilities || [];
+
+
+/* =============================
+   ELEMENTS
+============================= */
+const avatarPreview = document.getElementById("avatarPreview");
+const fileInput = document.getElementById("charImage");
+const editor = document.getElementById("editorContainer");
+const canvas = document.getElementById("imageCanvas");
+const ctx = canvas.getContext("2d");
+const zoomSlider = document.getElementById("zoomSlider");
+const useBtn = document.getElementById("useImageBtn");
+
+const birthInput = document.getElementById("charBirthDate");
+const deathInput = document.getElementById("charDeathDate");
+const autoStats = document.getElementById("autoStats");
+
+const speciesInput = document.getElementById("charSpecies");
+const factionInput = document.getElementById("charFaction");
+const originInput = document.getElementById("charOrigin");
+const alignmentInput = document.getElementById("charAlignment");
+
+const relationshipList = document.getElementById("relationshipList");
+const addRelationshipBtn = document.getElementById("addRelationshipBtn");
+
+const customFieldsList = document.getElementById("customFieldsList");
+const addCustomFieldBtn = document.getElementById("addCustomFieldBtn");
+
+const deleteBtn = document.getElementById("deleteCharacterBtn");
+const saveBtn = document.getElementById("saveBtn");
+
+const abilityList = document.getElementById("abilityList");
+const addAbilityBtn = document.getElementById("addAbilityBtn");
+
+
+/* =============================
+   LOAD FORM DATA
+============================= */
+if(char){
+    charName.value = char.name || "";
+    charDesc.value = char.desc || "";
+    charTags.value = char.tags || "";
+    charFolder.value = char.folder || "";
+
+    birthInput.value = char.birthDate || "";
+    deathInput.value = char.deathDate || "";
+
+    speciesInput.value = char.species || "";
+    factionInput.value = char.faction || "";
+    originInput.value = char.origin || "";
+    alignmentInput.value = char.alignment || "";
+
+    if(char.image){
+        avatarPreview.src = 
+     document.getElementById("freeformBtn").classList.remove("hidden");   
+    }
+}
+
+
+/* =============================
+   IMAGE EDITOR
+============================= */
+let img = new Image();
+let scale = 1;
+let posX = 0;
+let posY = 0;
+let dragging = false;
+let startX = 0;
+let startY = 0;
+
+fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    if(!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = e => {
+        img.onload = () => {
+            editor.style.display = "block";
+
+            scale = Math.max(
+                canvas.width / img.width,
+                canvas.height / img.height
+            );
+
+            posX = (canvas.width - img.width * scale)/2;
+            posY = (canvas.height - img.height * scale)/2;
+
+            draw();
+        };
+
+        img.src = e.target.result;
+    };
+
+    reader.readAsDataURL(file);
+});
+
+function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(150,150,150,0,Math.PI*2);
+    ctx.clip();
+
+    ctx.drawImage(img, posX, posY, img.width*scale, img.height*scale);
+    ctx.restore();
+}
+
+function clampPosition(){
+    const imgW = img.width * scale;
+    const imgH = img.height * scale;
+
+    const minX = canvas.width - imgW;
+    const minY = canvas.height - imgH;
+
+    posX = Math.min(0, Math.max(minX, posX));
+    posY = Math.min(0, Math.max(minY, posY));
+}
+
+function startDrag(e){
+    dragging = true;
+    const rect = canvas.getBoundingClientRect();
+
+    startX = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    startY = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+}
+
+function dragMove(e){
+    if(!dragging) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+
+    posX += x - startX;
+    posY += y - startY;
+
+    startX = x;
+    startY = y;
+
+    clampPosition();
+    draw();
+}
+
+canvas.addEventListener("mousedown", startDrag);
+canvas.addEventListener("mousemove", dragMove);
+canvas.addEventListener("mouseup", ()=> dragging=false);
+
+canvas.addEventListener("touchstart", startDrag);
+canvas.addEventListener("touchmove", dragMove, { passive:false });
+canvas.addEventListener("touchend", ()=> dragging=false);
+
+zoomSlider.addEventListener("input", ()=>{
+    scale = parseFloat(zoomSlider.value);
+    draw();
+});
+
+useBtn.addEventListener("click", ()=>{
+    savedImageData = canvas.toDataURL("image/png");
+    avatarPreview.src = savedImageData;
+    editor.style.display = "none";
+});
+
+
+/* =============================
+   AUTO STATS
+============================= */
+function updateAutoStats(){
+    const birth = birthInput.value ? new Date(birthInput.value) : null;
+    const death = deathInput.value ? new Date(deathInput.value) : null;
+
+    let status = death ? "Deceased" : "Alive";
+    let age = "Unknown";
+
+    if(birth){
+        const end = death || new Date();
+        age = Math.floor((end-birth)/(1000*60*60*24*365.25));
+    }
+
+    autoStats.innerHTML = `Status: <b>${status}</b><br>Age: <b>${age}</b>`;
+    return {status, age};
+}
+
+birthInput.addEventListener("input", updateAutoStats);
+deathInput.addEventListener("input", updateAutoStats);
+updateAutoStats();
+
+
+/* =============================
+   SAVE CHARACTER
+============================= */
+saveBtn.addEventListener("click", ()=>{
+
+    const auto = updateAutoStats();
+
+    if(char){
+        characters = characters.map(c =>
+            c.id === editingId
+                ? {
+                    ...c,
+                    name: charName.value,
+                    desc: charDesc.value,
+                    tags: charTags.value,
+                    folder: charFolder.value,
+                    image: savedImageData,
+                    birthDate: birthInput.value || null,
+                    deathDate: deathInput.value || null,
+                    status: auto.status,
+                    age: auto.age,
+                    species: speciesInput.value,
+                    faction: factionInput.value,
+                    origin: originInput.value,
+                    alignment: alignmentInput.value,
+                    relationships,
+                    customFields,
+                    abilities,
+                    updatedAt: new Date().toISOString()
+                }
+                : c
+        );
+    } else {
+        characters.push({
+            id: crypto.randomUUID(),
+            name: charName.value,
+            desc: charDesc.value,
+            tags: charTags.value,
+            folder: charFolder.value,
+            image: savedImageData,
+            birthDate: birthInput.value || null,
+            deathDate: deathInput.value || null,
+            status: auto.status,
+            age: auto.age,
+            species: speciesInput.value,
+            faction: factionInput.value,
+            origin: originInput.value,
+            alignment: alignmentInput.value,
+            relationships,
+            customFields,
+            abilities,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        });
+    }
+
+    localStorage.setItem("characters", JSON.stringify(characters));
+    window.location.href = "character.html";
+});
+
+
+/* =============================
+   DELETE CHARACTER
+============================= */
+deleteBtn.addEventListener("click", ()=>{
+
+    if(!char){
+        alert("Cannot delete — no character loaded.");
+        return;
+    }
+
+    if(!confirm("Delete this character permanently?")) return;
+
+    characters = characters.filter(c => c.id !== editingId);
+    localStorage.setItem("characters", JSON.stringify(characters));
+    localStorage.removeItem("editingCharacterId");
+
+    window.location.href = "character.html";
+});
+
+
+/* =============================
+   RELATIONSHIPS
+============================= */
+addRelationshipBtn.addEventListener("click", ()=>{
+    relationships.push({name:"", type:""});
+    renderRelationships();
+});
+
+function renderRelationships(){
+    relationshipList.innerHTML = "";
+
+    relationships.forEach((rel,i)=>{
+        const row = document.createElement("div");
+
+        row.innerHTML = `
+        <input value="${rel.name||""}" data-i="${i}" class="rel-name">
+        <input value="${rel.type||""}" data-i="${i}" class="rel-type">
+        <button data-i="${i}" class="rel-del">Delete</button>
+        `;
+
+        relationshipList.appendChild(row);
+    });
+
+    document.querySelectorAll(".rel-name").forEach(el=>{
+        el.oninput = e => relationships[e.target.dataset.i].name = e.target.value;
+    });
+
+    document.querySelectorAll(".rel-type").forEach(el=>{
+        el.oninput = e => relationships[e.target.dataset.i].type = e.target.value;
+    });
+
+    document.querySelectorAll(".rel-del").forEach(el=>{
+        el.onclick = e=>{
+            relationships.splice(e.target.dataset.i,1);
+            renderRelationships();
+        };
+    });
+}
+
+renderRelationships();
+
+/*===========FREEFORM EDIT==============*/
+
+const freeformBtn = document.getElementById("freeformBtn");
+
+freeformBtn.addEventListener("click", ()=>{
+
+    if(!char){
+        alert("You must save the character before using Freeform Edit.");
+        return;
+    }
+
+    localStorage.setItem("editingCharacterId", char.id);
+
+    window.location.href = "freeform-editor.html";
+});
+
+
+
+/* =============================
+   CUSTOM FIELDS
+============================= */
+addCustomFieldBtn.addEventListener("click", ()=>{
+    customFields.push({
+        id: crypto.randomUUID(),
+        label:"",
+        type:"text",
+        value:"",
+        options:[]
+    });
+    renderCustomFields();
+});
+
+function renderCustomFields(){
+    customFieldsList.innerHTML = "";
+
+    customFields.forEach((f,i)=>{
+        const div = document.createElement("div");
+
+        div.innerHTML = `
+        <input value="${f.label}" data-i="${i}" class="cf-label">
+        <select data-i="${i}" class="cf-type">
+            <option value="text">Text</option>
+            <option value="longtext">Long Text</option>
+            <option value="number">Number</option>
+            <option value="boolean">True/False</option>
+        </select>
+        <button data-i="${i}" class="cf-del">Delete</button>
+        `;
+
+        customFieldsList.appendChild(div);
+    });
+
+    document.querySelectorAll(".cf-label").forEach(el=>{
+        el.oninput = e => customFields[e.target.dataset.i].label = e.target.value;
+    });
+
+    document.querySelectorAll(".cf-type").forEach(el=>{
+        el.onchange = e => customFields[e.target.dataset.i].type = e.target.value;
+    });
+
+    document.querySelectorAll(".cf-del").forEach(el=>{
+        el.onclick = e=>{
+            customFields.splice(e.target.dataset.i,1);
+            renderCustomFields();
+        };
+    });
+}
+
+renderCustomFields();
+
+
+/* =============================
+   ABILITIES
+============================= */
+addAbilityBtn.addEventListener("click", ()=>{
+    abilities.push({
+        id: crypto.randomUUID(),
+        name:"",
+        type:"",
+        power:0,
+        description:""
+    });
+    renderAbilities();
+});
+
+function renderAbilities(){
+    abilityList.innerHTML = "";
+
+    abilities.forEach(a=>{
+        const div = document.createElement("div");
+
+        div.innerHTML = `
+        <input value="${a.name}" data-id="${a.id}" class="ab-name">
+        <input value="${a.type}" data-id="${a.id}" class="ab-type">
+        <input type="number" value="${a.power}" data-id="${a.id}" class="ab-power">
+        <textarea data-id="${a.id}" class="ab-desc">${a.description}</textarea>
+        <button data-id="${a.id}" class="ab-del">Delete</button>
+        `;
+
+        abilityList.appendChild(div);
+    });
+}
+
+abilityList.addEventListener("input", e=>{
+    const id = e.target.dataset.id;
+    const a = abilities.find(x=>x.id===id);
+    if(!a) return;
+
+    if(e.target.classList.contains("ab-name")) a.name = e.target.value;
+    if(e.target.classList.contains("ab-type")) a.type = e.target.value;
+    if(e.target.classList.contains("ab-power")) a.power = parseInt(e.target.value)||0;
+    if(e.target.classList.contains("ab-desc")) a.description = e.target.value;
+});
+
+abilityList.addEventListener("click", e=>{
+    if(!e.target.classList.contains("ab-del")) return;
+    const id = e.target.dataset.id;
+    abilities = abilities.filter(a=>a.id!==id);
+    renderAbilities();
+});
+
+renderAbilities();
+
+</script>
+
+</body>
+</html>
