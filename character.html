@@ -1,697 +1,576 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Characters - World Builder</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Characters - World Builder</title>
 
-<style>
-:root{
-    --bg-main:#0f1117;
-    --bg-card:#1a1d26;
-    --bg-accent:#232734;
-    --text-main:#e6e9ef;
-    --text-muted:#9aa3b2;
-    --accent:#5aa2ff;
-    --radius:14px;
+  <style>
+    :root {
+      --bg-main:    #0f1117;
+      --bg-card:    #1a1d26;
+      --bg-accent:  #232734;
+      --text-main:  #e6e9ef;
+      --text-muted: #9aa3b2;
+      --accent:     #5aa2ff;
+      --radius:     14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, sans-serif;
+    }
+
+    body {
+      background: var(--bg-main);
+      color: var(--text-main);
+      padding-bottom: 100px;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 18px;
+      background: var(--bg-card);
+      position: sticky;
+      top: 0;
+      border-bottom: 1px solid #2a2f3d;
+      z-index: 100;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 12px;
+    }
+
+    #searchInput {
+      width: 100%;
+      padding: 12px;
+      border-radius: var(--radius);
+      border: none;
+      background: var(--bg-accent);
+      color: white;
+      font-size: 14px;
+    }
+
+    #searchInput::placeholder {
+      color: var(--text-muted);
+    }
+
+    /* ── Folder Bar ── */
+    .folder-bar {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 14px;
+      scrollbar-width: thin;
+    }
+
+    .folder {
+      background: var(--bg-accent);
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 14px;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    .folder.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    #addFolderBtn {
+      width: 100%;
+      padding: 10px;
+      border-radius: 999px;
+      border: none;
+      background: var(--bg-accent);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 14px;
+      transition: 0.15s;
+    }
+
+    #addFolderBtn:hover {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* ── Cards ── */
+    .section {
+      padding: 16px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      padding: 16px;
+      border-radius: var(--radius);
+      margin-bottom: 14px;
+      border: 1px solid #2a2f3d;
+      transition: all 0.18s ease;
+      position: relative;
+    }
+
+    .card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 6px 22px rgba(0,0,0,0.3);
+      transform: translateY(-1px);
+    }
+
+    .card-content {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .avatar {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: var(--bg-accent);
+      flex-shrink: 0;
+    }
+
+    .card-text {
+      flex: 1;
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 17px;
+    }
+
+    .card-desc {
+      color: var(--text-muted);
+      margin-top: 4px;
+      line-height: 1.4;
+      font-size: 14px;
+    }
+
+    .card-tags {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    .card-id-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+
+    .copy-id-btn {
+      border: none;
+      background: var(--bg-accent);
+      color: var(--text-muted);
+      border-radius: 6px;
+      padding: 2px 6px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    .copy-id-btn:hover {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* ── Radial Menu (now automatic!) ── */
+/* ── Radial Menu (left-side fan / half-circle) ── */
+:root {
+  --radial-distance: 74px;     /* distance from center – feel free to tweak */
+  --fan-start: 100deg;         /* start angle (from positive x-axis) – 90deg = straight up */
+  --fan-span: 160deg;          /* total arc → 180deg = perfect half, 140-170deg feels natural */
 }
 
-*{
-    box-sizing:border-box;
-    margin:0;
-    padding:0;
-    font-family:system-ui, sans-serif;
+.radial-container {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
 }
 
-body{
-    background:var(--bg-main);
-    color:var(--text-main);
-    padding-bottom:80px;
+.radial-main {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg-accent);
+  color: var(--text-muted);
+  font-size: 20px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 2;
 }
 
-/* HEADER */
-header{
-    padding:18px;
-    background:var(--bg-card);
-    position:sticky;
-    top:0;
-    border-bottom:1px solid #2a2f3d;
+.radial-main:hover {
+  background: var(--accent);
+  color: white;
+  transform: scale(1.08);
 }
 
-#searchInput{
-    margin-top:12px;
-    width:100%;
-    padding:12px;
-    border-radius:var(--radius);
-    border:none;
-    background:var(--bg-accent);
-    color:white;
-    font-size:14px;
+.radial-menu {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
-#searchInput::placeholder{
-    color:var(--text-muted);
+.radial-item {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid #2a2f3d;
+  color: var(--text-muted);
+  font-size: 18px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  opacity: 0;
+  transform: scale(0.7) translate(0, 0);
+  pointer-events: none;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.4);
 }
 
-/* FOLDER BAR */
-.folder-bar{
-    display:flex;
-    gap:10px;
-    overflow-x:auto;
-    padding:14px;
+.radial-item:hover {
+  background: var(--accent);
+  color: white;
+  transform: scale(1.12) translate(var(--tx), var(--ty)) !important;
 }
 
-.folder{
-    background:var(--bg-accent);
-    padding:10px 16px;
-    border-radius:999px;
-    font-size:14px;
+/* Active state */
+.radial-container.active .radial-menu {
+  pointer-events: auto;
 }
 
-/* CARDS */
-.section{
-    padding:16px;
+.radial-container.active .radial-item {
+  opacity: 1;
+  transform: scale(1) translate(var(--tx), var(--ty));
+  pointer-events: auto;
 }
 
-.card{
-    background:var(--bg-card);
-    padding:16px;
-    border-radius:var(--radius);
-    margin-bottom:14px;
-    border:1px solid #2a2f3d;
-    transition:transform .15s ease, border-color .15s ease;
+/* ── Automatic left-fan positioning ── */
+.radial-item {
+  --total: 4;                      /* ← update this when you add/remove items */
+  --index: calc(var(--i) - 1);     /* 0-based */
+  --angle-step: calc(var(--fan-span) / (var(--total) - 1));
+  --angle: calc(var(--fan-start) + var(--index) * var(--angle-step));
+
+  --tx: calc(var(--radial-distance) * cos(var(--angle)));
+  --ty: calc(var(--radial-distance) * sin(var(--angle)));
+
+  transform: translate(var(--tx), var(--ty)) rotate(calc(-1 * var(--angle)));
 }
 
-.card-title{
-    font-weight:600;
-    font-size:17px;
-}
+/* Auto-assign --i via :nth-child (add more lines if you ever go >8 items) */
+.radial-item:nth-child(1) { --i: 1; }
+.radial-item:nth-child(2) { --i: 2; }
+.radial-item:nth-child(3) { --i: 3; }
+.radial-item:nth-child(4) { --i: 4; }
+.radial-item:nth-child(5) { --i: 5; }
+.radial-item:nth-child(6) { --i: 6; }
+    /* ── Bottom Nav ── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 65px;
+      background: var(--bg-card);
+      border-top: 1px solid #2a2f3d;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 1000;
+    }
 
-.card-tags{
-    font-size:12px;
-    color:var(--text-muted);
-    margin-top:6px;
-}
+    .nav-btn {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-decoration: none;
+      text-align: center;
+    }
 
-.card:hover{
-    transform:translateY(-2px);
-    border-color:var(--accent);
-}
+    .nav-btn.active {
+      color: var(--accent);
+    }
 
+    /* ── FAB ── */
+    .fab {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: white;
+      font-size: 32px;
+      display: grid;
+      place-items: center;
+      text-decoration: none;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.45);
+      transition: all 0.3s ease;
+      z-index: 1100;
+    }
 
-/* BOTTOM NAV */
-.bottom-nav{
-    position:fixed;
-    bottom:0;
-    left:0;
-    right:0;
-    height:65px;
-    background:var(--bg-card);
-    border-top:1px solid #2a2f3d;
-    display:flex;
-    justify-content:space-around;
-    align-items:center;
-    z-index:1000;
-}
-
-.nav-btn{
-    font-size:12px;
-    color:var(--text-muted);
-    text-decoration:none;
-}
-
-.nav-btn.active{
-    color:var(--accent);
-}
-
-
-/* FLOATING ACTION BUTTON */
-.fab{
-    position:fixed;
-    bottom:90px;
-    right:20px;
-
-    width:60px;
-    height:60px;
-    border-radius:50%;
-
-    background:var(--accent);
-    color:white;
-
-    font-size:32px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-
-    text-decoration:none;
-
-    box-shadow:0 6px 20px rgba(0,0,0,0.4);
-    transition:transform 0.3s ease;
-    z-index:1100;
-}
-
-/* ROTATE EFFECT WHEN PRESSED */
-.fab:active{
-    transform:rotate(90deg) scale(0.95);
-}
-
-/* AVATAR CSS */
-.avatar{
-    width:70px;
-    height:70px;
-    border-radius:50%;
-    object-fit:cover;
-    background:var(--bg-accent);
-    margin-bottom:10px;
-    display:block;
-}
-
-/* TEXT WRAPPER */
-
-.card-content{
-    display:flex;
-    gap:16px;
-    align-items:center;
-}
-
-.card-text{
-    flex:1;
-}
-
-.card-desc{
-    color:var(--text-muted);
-    margin-top:4px;
-    line-height:1.4;
-    font-size:14px;
-}
-
-/* FOLDER */
-
-.folder{
-    background:var(--bg-accent);
-    padding:10px 16px;
-    border-radius:999px;
-    font-size:14px;
-    cursor:pointer;
-    white-space:nowrap;
-    transition:.15s;
-}
-
-.folder.active{
-    background:var(--accent);
-    color:white;
-}
-#addFolderBtn:hover{
-    color:white;
-    background:var(--accent);
-}
-
-/* ========== BUTTON STYLING ============= */
-
-.editBtn, .viewBtn{
-    border:none;
-    background:var(--bg-accent);
-    color:var(--text-muted);
-    border-radius:8px;
-    width:36px;
-    height:36px;
-    cursor:pointer;
-    font-size:16px;
-    transition:.15s;
-}
-
-.editBtn:hover{
-    background:var(--accent);
-    color:white;
-}
-
-.viewBtn:hover{
-    background:var(--accent);
-    color:white;
-}
-
-
-/*=================ID CARD=======================*/
-
-.card-id-row{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    margin-top:4px;
-    font-size:11px;
-    color:var(--text-muted);
-    flex-wrap:wrap;
-}
-
-.copy-id-btn{
-    border:none;
-    background:var(--bg-accent);
-    color:var(--text-muted);
-    border-radius:6px;
-    padding:2px 6px;
-    font-size:11px;
-    cursor:pointer;
-    transition:.15s;
-}
-
-.copy-id-btn:hover{
-    background:var(--accent);
-    color:white;
-}
-
-/* ===== RADIAL MENU ===== */
-
-.radial-container{
-    position:relative;
-    width:40px;
-    height:40px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    z-index:10;
-}
-
-.radial-main{
-    width:40px;
-    height:40px;
-    border-radius:50%;
-    border:none;
-    background:var(--bg-accent);
-    color:var(--text-muted);
-    cursor:pointer;
-    font-size:18px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    transition:.2s;
-    z-index:2;
-}
-
-.radial-main:hover{
-    background:var(--accent);
-    color:white;
-}
-
-.radial-menu{
-    position:absolute;
-    width:40px;
-    height:40px;
-    top:50%;
-    left:50%;
-    transform:translate(-50%, -50%);
-    pointer-events:none;
-}
-
-.radial-item{
-    position:absolute;
-    width:36px;
-    height:36px;
-    border-radius:50%;
-    border:none;
-    background:var(--bg-card);
-    color:var(--text-muted);
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    transition:.25s ease;
-    opacity:0;
-    transform:translate(0,0);
-}
-
-.radial-item:hover{
-    background:var(--accent);
-    color:white;
-}
-
-.radial-container.active .radial-menu{
-    pointer-events:auto;
-}
-
-/* Even spacing around center */
-.radial-container.active .edit{
-    transform:translate(-60px, 0);
-    opacity:1;
-}
-
-.radial-container.active .view{
-    transform:translate(0, -60px);
-    opacity:1;
-}
-
-.radial-container.active .freeform{
-    transform:translate(-45px, -45px);
-    opacity:1;
-}
-
-
-</style>
+    .fab:active {
+      transform: rotate(90deg) scale(0.92);
+    }
+  </style>
 </head>
-
 <body>
-   
 
-<header>
-    
-<!-- MAIN BODY -->
-    
+  <header>
     <h1>Characters</h1>
+    <input id="searchInput" type="text" placeholder="Search Characters or #Tags">
+  </header>
 
-<input id="searchInput" type="text" placeholder="Search Characters or #Tags">
+  <div class="folder-bar" id="folderBar"></div>
 
+  <div style="padding: 0 14px 10px;">
+    <button id="addFolderBtn">+ Add Folder</button>
+  </div>
 
-</header>
-
-<div class="folder-bar" id="folderBar"></div>
-
-<div style="padding:0 14px 10px 14px;">
-    <button id="addFolderBtn" style="
-        width:100%;
-        padding:10px;
-        border-radius:999px;
-        border:none;
-        background:var(--bg-accent);
-        color:var(--text-muted);
-        cursor:pointer;
-    ">
-        + Add Folder
-    </button>
-</div>
-
-
-<section class="section">
-
-
-
-<!-- ===== CHARACTER LIST ===== -->
-<section class="section">
+  <section class="section">
     <h2>Character List</h2>
-
     <div id="characterList"></div>
+  </section>
 
-</section>
-
-
-<!-- ===== BOTTOM NAV ===== -->
-<nav class="bottom-nav">
-    <a href="index.html" class="nav-btn active">Home</a>
-    <a href="events.html" class="nav-btn">Events</a>
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <a href="index.html"     class="nav-btn active">Home</a>
+    <a href="events.html"    class="nav-btn">Events</a>
     <a href="character.html" class="nav-btn">Characters</a>
-    <a href="world.html" class="nav-btn">World</a>
-    <a href="#" class="nav-btn">Folders</a>
-</nav>
+    <a href="world.html"     class="nav-btn">World</a>
+    <a href="#"              class="nav-btn">Folders</a>
+  </nav>
 
+  <!-- Floating Action Button -->
+  <a href="add-character.html" class="fab" id="fabBtn">+</a>
 
+  <script>
+    // ── Your existing JavaScript remains almost unchanged ──
+    // Only small cleanup & safer event delegation added
 
+    const list = document.getElementById("characterList");
+    const searchInput = document.getElementById("searchInput");
+    const folderBar = document.getElementById("folderBar");
+    const addFolderBtn = document.getElementById("addFolderBtn");
 
-<!-- FLOATING ADD CHARACTER BUTTON -->
-<a href="add-character.html" class="fab" id="fabBtn">
-    +
-</a>
+    let characters = [];
+    let savedFolders = JSON.parse(localStorage.getItem("folders")) || [];
+    let activeFolder = "All";
 
-<!-- JAVA SCRIPT -->
+    function loadCharacters() {
+      characters = JSON.parse(localStorage.getItem("characters")) || [];
 
-<script>
-
-/* =========================
-   GLOBAL STATE
-========================= */
-const list = document.getElementById("characterList");
-const searchInput = document.getElementById("searchInput");
-const folderBar = document.getElementById("folderBar");
-const addFolderBtn = document.getElementById("addFolderBtn");
-
-let characters = [];
-let savedFolders = JSON.parse(localStorage.getItem("folders")) || [];
-let activeFolder = "All";
-
-
-/* =========================
-   LOAD CHARACTERS (SAFE)
-========================= */
-function loadCharacters(){
-    characters = JSON.parse(localStorage.getItem("characters")) || [];
-
-    // Auto-assign IDs if missing
-    let changed = false;
-
-    characters = characters.map(c => {
-        if(!c.id){
-            changed = true;
-            return { ...c, id: crypto.randomUUID() };
+      let changed = false;
+      characters = characters.map(c => {
+        if (!c.id) {
+          changed = true;
+          return { ...c, id: crypto.randomUUID() };
         }
         return c;
-    });
+      });
 
-    if(changed){
+      if (changed) {
         localStorage.setItem("characters", JSON.stringify(characters));
+      }
     }
-}
 
+    function createCard(char) {
+      const card = document.createElement("div");
+      card.className = "card";
 
-
-/* =========================
-   CARD CREATOR
-========================= */
-function createCard(char){
-
-    const card = document.createElement("div");
-    card.className = "card";
-
-    card.innerHTML = `
+      card.innerHTML = `
         <div class="card-content">
+          ${char.image 
+            ? `<img src="${char.image}" class="avatar" alt="${char.name || 'Character'}">`
+            : `<div class="avatar"></div>`
+          }
 
-            ${char.image 
-                ? `<img src="${char.image}" class="avatar">`
-                : `<div class="avatar"></div>`
-            }
+          <div class="card-text">
+            <div class="card-title">${char.name || "Unnamed Character"}</div>
 
-            <div class="card-text">
-                <div class="card-title">${char.name || "Unnamed Character"}</div>
-
-                <div class="card-id-row">
-                    <span>${char.id}</span>
-                    <button class="copy-id-btn" data-id="${char.id}">Copy</button>
-                </div>
-
-                <div class="card-desc">${char.desc || ""}</div>
-                <div class="card-tags">${char.tags || ""}</div>
+            <div class="card-id-row">
+              <span>${char.id}</span>
+              <button class="copy-id-btn" data-id="${char.id}">Copy</button>
             </div>
 
+            <div class="card-desc">${char.desc || ""}</div>
+            <div class="card-tags">${char.tags || ""}</div>
+          </div>
+
           <div class="radial-container">
-    <button class="radial-main">•••</button>
+            <button class="radial-main" type="button">•••</button>
 
-    <div class="radial-menu">
-        <button class="radial-item edit" title="Edit">✒</button>
-        <button class="radial-item view" title="View">✦</button>
-        <button class="radial-item freeform" title="Freeform">▶</button>
-    </div>
-</div>
-</div>
-    `;
+            <div class="radial-menu">
+              <button class="radial-item edit"    title="Edit"         type="button">✒</button>
+              <button class="radial-item view"    title="View"         type="button">✦</button>
+              <button class="radial-item freeform-viewer" title="Freeform View"   type="button">▼</button>
+              <button class="radial-item freeform-edit"   title="Freeform Edit"  type="button">▶</button>
+            </div>
+          </div>
+        </div>
+      `;
 
-    card.querySelector(".copy-id-btn").addEventListener("click", async (e)=>{
+      // Copy ID
+      card.querySelector(".copy-id-btn").onclick = async (e) => {
         e.stopPropagation();
-        const id = e.target.dataset.id;
+        const btn = e.currentTarget;
+        const id = btn.dataset.id;
 
-        try{
-            await navigator.clipboard.writeText(id);
-            e.target.textContent = "✔";
-            setTimeout(()=> e.target.textContent = "Copy", 1000);
-        }catch{
-            alert("Failed to copy ID.");
+        try {
+          await navigator.clipboard.writeText(id);
+          btn.textContent = "✔";
+          setTimeout(() => btn.textContent = "Copy", 1200);
+        } catch {
+          alert("Failed to copy ID.");
         }
-    });
+      };
 
-    const radialContainer = card.querySelector(".radial-container");
-const mainBtn = card.querySelector(".radial-main");
+      // Radial toggle
+      const radialContainer = card.querySelector(".radial-container");
+      const mainBtn = card.querySelector(".radial-main");
 
-mainBtn.addEventListener("click", (e)=>{
-    e.stopPropagation();
-    radialContainer.classList.toggle("active");
-});
+      mainBtn.onclick = (e) => {
+        e.stopPropagation();
+        radialContainer.classList.toggle("active");
+      };
 
-/* EDIT */
-card.querySelector(".edit").addEventListener("click", (e)=>{
-    e.stopPropagation();
-    localStorage.setItem("editingCharacterId", char.id);
-    window.location.href = "character-manager.html";
-});
+      // Action buttons
+      const actions = {
+        ".edit":            () => { localStorage.setItem("editingCharacterId", char.id); location.href = "character-manager.html"; },
+        ".view":            () => { localStorage.setItem("viewingCharacterId", char.id); location.href = "character-viewer.html"; },
+        ".freeform-edit":   () => { localStorage.setItem("editingCharacterId", char.id); location.href = "freeform-editor.html"; },
+        ".freeform-viewer": () => { localStorage.setItem("editingCharacterId", char.id); location.href = "freeform-viewer.html"; },
+      };
 
-/* VIEW */
-card.querySelector(".view").addEventListener("click", (e)=>{
-    e.stopPropagation();
-    localStorage.setItem("viewingCharacterId", char.id);
-    window.location.href = "character-viewer.html";
-});
+      for (const [sel, fn] of Object.entries(actions)) {
+        const btn = card.querySelector(sel);
+        if (btn) btn.onclick = (e) => { e.stopPropagation(); fn(); };
+      }
 
-/* FREEFORM */
-card.querySelector(".freeform").addEventListener("click", (e)=>{
-    e.stopPropagation();
-    localStorage.setItem("freeformCharacterId", char.id);
-    window.location.href = "freeform-editor.html";
-});
-
-
-    return card;
-}
-
-    
-/* =========================
-   RENDER LIST
-========================= */
-function renderList(array){
-
-    list.innerHTML = "";
-
-    if(array.length === 0){
-        list.innerHTML = "<p style='color:var(--text-muted)'>No characters found.</p>";
-        return;
+      return card;
     }
 
-    array.forEach(char => {
-        list.appendChild(createCard(char));
-    });
-}
+    function renderList(array) {
+      list.innerHTML = "";
 
+      if (array.length === 0) {
+        list.innerHTML = `<p style="color:var(--text-muted); text-align:center; padding:40px 0;">
+          No characters found.
+        </p>`;
+        return;
+      }
 
+      array.forEach(char => list.appendChild(createCard(char)));
+    }
 
-/* =========================
-   FOLDER SYSTEM
-========================= */
-function getFolders(){
+    function getFolders() {
+      const folders = new Set(["All"]);
+      savedFolders.forEach(f => folders.add(f));
+      characters.forEach(c => { if (c.folder?.trim()) folders.add(c.folder.trim()); });
+      return [...folders];
+    }
 
-    const folders = new Set(["All"]);
-
-    savedFolders.forEach(f => folders.add(f));
-
-    characters.forEach(c=>{
-        if(c.folder && c.folder.trim() !== ""){
-            folders.add(c.folder);
-        }
-    });
-
-    return [...folders];
-}
-
-function buildFolderBar(){
-
-    folderBar.innerHTML = "";
-
-    const folders = getFolders();
-
-    folders.forEach(folderName => {
-
+    function buildFolderBar() {
+      folderBar.innerHTML = "";
+      getFolders().forEach(name => {
         const btn = document.createElement("div");
         btn.className = "folder";
-        btn.textContent = folderName;
+        btn.textContent = name;
+        if (name === activeFolder) btn.classList.add("active");
 
-        if(folderName === activeFolder){
-            btn.classList.add("active");
-        }
-
-        btn.addEventListener("click", ()=>{
-            activeFolder = folderName;
-            buildFolderBar();
-            applyFilters();
-        });
+        btn.onclick = () => {
+          activeFolder = name;
+          buildFolderBar();
+          applyFilters();
+        };
 
         folderBar.appendChild(btn);
-    });
-}
+      });
+    }
 
+    function applyFilters() {
+      loadCharacters();
 
-/* =========================
-   FILTER PIPELINE
-========================= */
-function applyFilters(){
+      let filtered = [...characters];
 
-    loadCharacters();
-
-    let filtered = [...characters];
-
-    /* Folder filter */
-    if(activeFolder !== "All"){
-        filtered = filtered.filter(c =>
-            (c.folder || "").toLowerCase() === activeFolder.toLowerCase()
+      if (activeFolder !== "All") {
+        filtered = filtered.filter(c => 
+          (c.folder || "").toLowerCase() === activeFolder.toLowerCase()
         );
-    }
+      }
 
-    /* Search filter */
-    const query = searchInput.value.toLowerCase().trim();
-
-    if(query){
+      const query = searchInput.value.toLowerCase().trim();
+      if (query) {
         filtered = filtered.filter(char => {
-
-            const name = (char.name || "").toLowerCase();
-            const tags = (char.tags || "").toLowerCase();
-
-            if(query.startsWith("#")){
-                return tags.includes(query);
-            }
-
-            return name.includes(query) || tags.includes(query);
+          const name = (char.name  || "").toLowerCase();
+          const tags = (char.tags  || "").toLowerCase();
+          if (query.startsWith("#")) return tags.includes(query);
+          return name.includes(query) || tags.includes(query);
         });
+      }
+
+      renderList(filtered);
     }
 
-    renderList(filtered);
-}
-
-
-/* =========================
-   ADD FOLDER
-========================= */
-addFolderBtn.addEventListener("click", ()=>{
-
-    const name = prompt("Folder name:");
-
-    if(!name) return;
-
-    const trimmed = name.trim();
-
-    if(trimmed === "") return;
-
-    if(savedFolders.includes(trimmed)){
+    // ── Event listeners ──
+    addFolderBtn.onclick = () => {
+      const name = prompt("Folder name:");
+      if (!name?.trim()) return;
+      const trimmed = name.trim();
+      if (savedFolders.includes(trimmed)) {
         alert("Folder already exists.");
         return;
+      }
+      savedFolders.push(trimmed);
+      localStorage.setItem("folders", JSON.stringify(savedFolders));
+      buildFolderBar();
+    };
+
+    searchInput.oninput = applyFilters;
+
+    // Close all radial menus when clicking outside
+    document.addEventListener("click", e => {
+      if (!e.target.closest(".radial-container")) {
+        document.querySelectorAll(".radial-container.active")
+          .forEach(el => el.classList.remove("active"));
+      }
+    });
+
+    // Refresh on focus (coming back from other pages)
+    window.onfocus = () => {
+      loadCharacters();
+      buildFolderBar();
+      applyFilters();
+    };
+
+    // Init
+    function init() {
+      loadCharacters();
+      buildFolderBar();
+      applyFilters();
     }
 
-    savedFolders.push(trimmed);
-    localStorage.setItem("folders", JSON.stringify(savedFolders));
-
-    buildFolderBar();
-});
-
-
-/* =========================
-   EVENTS
-========================= */
-searchInput.addEventListener("input", applyFilters);
-
-
-/* Refresh if returning from manager page */
-window.addEventListener("focus", () => {
     init();
-});
-
-
-/* =========================
-   INIT
-========================= */
-function init(){
-    loadCharacters();
-    buildFolderBar();
-    applyFilters();
-}
-
-init();
-
-document.addEventListener("click", ()=>{
-    document.querySelectorAll(".radial-container.active")
-        .forEach(el => el.classList.remove("active"));
-});
-
-
-</script>
+  </script>
 </body>
 </html>
