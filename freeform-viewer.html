@@ -1,281 +1,415 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Freeform Viewer</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Freeform Viewer</title>
 
-<style>
-:root{
-    --bg-main:#0b0e14;
-    --bg-panel:#121722;
-    --bg-elev:#171d2b;
-    --accent:#6ea8ff;
-    --danger:#ff647c;
-    --text-main:#e8ecf4;
-    --text-dim:#8f9bb3;
-    --border:#1f2635;
-    --radius:18px;
-    --shadow:0 30px 70px rgba(0,0,0,0.65);
-}
+  <!-- html2canvas for save to PNG -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-*{ box-sizing:border-box; }
+  <style>
+    :root {
+      --bg-main:     #0a0e17;
+      --bg-panel:    #11151f;
+      --bg-elev:     #171d2b;
+      --accent:      #7ab8ff;
+      --accent-glow: rgba(122,184,255,0.25);
+      --danger:      #ff647c;
+      --text-main:   #f0f4ff;
+      --text-dim:    #a0b0d0;
+      --border:      #1e2538;
+      --radius:      20px;
+      --shadow:      0 25px 60px rgba(0,0,0,0.7);
+      --glow:        0 0 18px var(--accent-glow);
+    }
 
-body{
-    margin:0;
-    background:
-        radial-gradient(circle at 20% 0%, rgba(110,168,255,0.08), transparent 40%),
-        linear-gradient(180deg,#0b0e14 0%, #0e131c 100%);
-    color:var(--text-main);
-    font-family:Inter, system-ui, -apple-system, sans-serif;
-    padding:40px;
-}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-/* HEADER */
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 15% 5%, rgba(122,184,255,0.11), transparent 45%),
+        linear-gradient(135deg, #0a0e17 0%, #0d1421 100%);
+      color: var(--text-main);
+      font-family: 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+      padding: 32px 24px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
 
-.viewer-header{
-    margin-bottom:28px;
-}
+    .viewer-header {
+      margin-bottom: 32px;
+      text-align: center;
+    }
 
-.viewer-title{
-    font-size:28px;
-    font-weight:700;
-    background:linear-gradient(90deg,#ffffff,#9dbdff);
-    -webkit-background-clip:text;
-    -webkit-text-fill-color:transparent;
-}
+    .viewer-title {
+      font-size: 2.4rem;
+      font-weight: 800;
+      background: linear-gradient(90deg, #ffffff, #b0d0ff, #7ab8ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
 
-.viewer-sub{
-    color:var(--text-dim);
-    font-size:13px;
-    margin-top:6px;
-}
+    .viewer-sub {
+      color: var(--text-dim);
+      font-size: 0.95rem;
+      margin-top: 8px;
+      opacity: 0.9;
+    }
 
-/* PANEL */
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin: 24px 0 32px;
+      flex-wrap: wrap;
+    }
 
-.viewer-container{
-    background:var(--bg-panel);
-    border-radius:var(--radius);
-    border:1px solid var(--border);
-    box-shadow:var(--shadow);
-    overflow:hidden;
-    position:relative;
-    min-height:400px;
-}
+    .btn {
+      padding: 12px 24px;
+      border-radius: 999px;
+      border: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.22s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-/* IFRAME */
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+      box-shadow: var(--glow);
+    }
 
-.viewer-frame{
-    width:100%;
-    height:80vh;
-    border:none;
-    display:block;
-}
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 30px rgba(122,184,255,0.4);
+    }
 
-/* ERROR STATE */
+    .viewer-container {
+      background: var(--bg-panel);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+      min-height: 500px;
+      display: flex;
+      flex-direction: column;
+    }
 
-.error-box{
-    padding:30px;
-    text-align:center;
-    color:var(--danger);
-}
+    .viewer-frame {
+      width: 100%;
+      flex: 1;
+      border: none;
+      display: block;
+      background: #0f141e;
+    }
 
-.error-box h2{
-    margin-bottom:12px;
-}
+    .viewer-frame::-webkit-scrollbar {
+      width: 10px;
+    }
 
-</style>
+    .viewer-frame::-webkit-scrollbar-track {
+      background: #0c101a;
+    }
+
+    .viewer-frame::-webkit-scrollbar-thumb {
+      background: #3a4a6a;
+      border-radius: 5px;
+      border: 2px solid #0c101a;
+    }
+
+    .error-box {
+      padding: 40px;
+      text-align: center;
+      color: var(--danger);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .error-box h2 {
+      margin-bottom: 16px;
+      font-size: 1.6rem;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 600px) {
+      body { padding: 20px 16px; }
+      .viewer-title { font-size: 2rem; }
+    }
+  </style>
 </head>
-
 <body>
 
-<div class="viewer-header">
-    <div class="viewer-title" id="viewerTitle">Loading...</div>
+  <div class="viewer-header">
+    <div class="viewer-title" id="viewerTitle">Loading character...</div>
     <div class="viewer-sub" id="viewerMeta"></div>
-</div>
+  </div>
 
-<div class="viewer-container" id="viewerContainer">
+  <div class="controls">
+    <button class="btn btn-primary" id="savePngBtn">⬇ Save as PNG</button>
+  </div>
+
+  <div class="viewer-container" id="viewerContainer">
     <div class="error-box hidden" id="errorBox">
-        <h2>Unable to load character</h2>
-        <div id="errorMessage"></div>
+      <h2>Unable to load character</h2>
+      <div id="errorMessage"></div>
     </div>
-</div>
+  </div>
 
-<script>
+  <script>
+    // ── GET CHARACTER ID ──
+    function getCharacterId() {
+      const params = new URLSearchParams(window.location.search);
+      const queryId = params.get("id");
+      return queryId || localStorage.getItem("viewingCharacterId") || localStorage.getItem("editingCharacterId");
+    }
 
-/* =============================
-   GET CHARACTER ID
-============================= */
+    const characterId = getCharacterId();
 
-function getCharacterId(){
-    const params = new URLSearchParams(window.location.search);
-    const queryId = params.get("id");
+    // ── LOAD DATA ──
+    let characters = JSON.parse(localStorage.getItem("characters")) || [];
+    let char = characters.find(c => c.id === characterId);
 
-    if(queryId) return queryId;
+    // ── DOM ELEMENTS ──
+    const errorBox     = document.getElementById("errorBox");
+    const errorMessage = document.getElementById("errorMessage");
+    const viewerContainer = document.getElementById("viewerContainer");
+    const viewerTitle  = document.getElementById("viewerTitle");
+    const viewerMeta   = document.getElementById("viewerMeta");
+    const savePngBtn   = document.getElementById("savePngBtn");
 
-    return localStorage.getItem("editingCharacterId");
-}
+    function showError(msg) {
+      viewerContainer.innerHTML = "";
+      errorBox.classList.remove("hidden");
+      errorMessage.textContent = msg;
+      viewerContainer.appendChild(errorBox);
+      if (savePngBtn) savePngBtn.disabled = true;
+    }
 
-const characterId = getCharacterId();
+    if (!characterId) {
+      showError("No character ID provided.");
+    } else if (!char) {
+      showError("Character not found in storage.");
+    } else {
+      // ── SANITIZER (blocks script tags, dangerous elements) ──
+      function sanitizeHTML(input) {
+        if (!input) return "";
 
-/* =============================
-   LOAD DATA
-============================= */
+        // Remove script blocks completely
+        input = input.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
 
-let characters = JSON.parse(localStorage.getItem("characters")) || [];
-let char = characters.find(c => c.id === characterId);
+        // Remove dangerous tags that could be used for exploits
+        const dangerous = 'iframe|object|embed|frame|frameset|applet|meta|base|form|input|button|textarea|style|link|svg|math|noscript';
+        const dangerousRegex = new RegExp(`<(${dangerous})\\b[^>]*>([\\s\\S]*?)</\\1>`, 'gi');
+        input = input.replace(dangerousRegex, '');
 
-/* =============================
-   ERROR HANDLING
-============================= */
+        const dangerousOpen = new RegExp(`<(${dangerous})\\b[^>]*>`, 'gi');
+        input = input.replace(dangerousOpen, '');
 
-const errorBox = document.getElementById("errorBox");
-const errorMessage = document.getElementById("errorMessage");
-const viewerContainer = document.getElementById("viewerContainer");
-const viewerTitle = document.getElementById("viewerTitle");
-const viewerMeta = document.getElementById("viewerMeta");
+        // Strip all event handlers
+        input = input.replace(/\son\w+\s*=\s*(".*?"|'.*?'|[^\s>]+)/gi, "");
 
-function showError(msg){
-    viewerContainer.innerHTML = "";
-    errorBox.classList.remove("hidden");
-    errorMessage.textContent = msg;
-    viewerContainer.appendChild(errorBox);
-}
+        // Block dangerous protocol schemes
+        input = input.replace(/javascript:/gi, 'javascript-blocked:');
+        input = input.replace(/data:/gi, 'data-blocked:');
+        input = input.replace(/vbscript:/gi, 'vbscript-blocked:');
 
-if(!characterId){
-    showError("No character ID provided.");
-    throw new Error("Missing character ID.");
-}
+        return input.trim();
+      }
 
-if(!char){
-    showError("Character not found in local storage.");
-    throw new Error("Character not found.");
-}
+      function sanitizeCSS(input) {
+        if (!input) return "";
+        return input
+          .replace(/@import[^;]+;/gi, "")
+          .replace(/expression\s*\([^)]*\)/gi, "")
+          .replace(/url\(\s*javascript:[^)]+\)/gi, "")
+          .replace(/behavior\s*:/gi, "")
+          .replace(/@charset[^;]+;/gi, "");
+      }
 
-/* =============================
-   SANITIZERS
-============================= */
+      // ── TEMPLATE REPLACEMENT ──
+      function applyTemplate(html) {
+        const replacements = {
+          "{{name}}":   char.name  || "",
+          "{{desc}}":   char.desc  || "",
+          "{{tags}}":   char.tags  || "",
+          "{{folder}}": char.folder|| "",
+          "{{image}}":  char.image || ""
+        };
+        Object.entries(replacements).forEach(([key, value]) => {
+          html = html.split(key).join(value);
+        });
+        return html;
+      }
 
-function sanitizeHTML(input){
-
-    if(!input) return "";
-
-    input = input.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "");
-    input = input.replace(/<(iframe|object|embed|svg|math|link|meta|base|form|input|button|textarea)[\s\S]*?>[\s\S]*?<\/\1>/gi, "");
-    input = input.replace(/<(iframe|object|embed|svg|math|link|meta|base|form|input|button|textarea)[^>]*?>/gi, "");
-    input = input.replace(/\son\w+\s*=\s*(".*?"|'.*?'|[^\s>]+)/gi, "");
-    input = input.replace(/javascript:/gi, "");
-    input = input.replace(/data:text\/html/gi, "");
-
-    return input;
-}
-
-function sanitizeCSS(input){
-
-    if(!input) return "";
-
-    input = input.replace(/@import[^;]+;/gi, "");
-    input = input.replace(/expression\s*\([^)]*\)/gi, "");
-    input = input.replace(/url\(\s*javascript:[^)]+\)/gi, "");
-    input = input.replace(/behavior\s*:/gi, "");
-
-    return input;
-}
-
-/* =============================
-   TEMPLATE VARIABLES
-============================= */
-
-function applyTemplate(html){
-
-    const replacements = {
-        "{{name}}": char.name || "",
-        "{{desc}}": char.desc || "",
-        "{{tags}}": char.tags || "",
-        "{{folder}}": char.folder || "",
-        "{{image}}": char.image || ""
-    };
-
-    Object.keys(replacements).forEach(key=>{
-        html = html.split(key).join(replacements[key]);
-    });
-
-    return html;
-}
-
-/* =============================
-   FALLBACK STRUCTURED VIEW
-============================= */
-
-function buildFallbackHTML(){
-
-    return `
-        <div style="max-width:800px;margin:0 auto;">
-            ${char.image ? `<img src="${char.image}" style="width:180px;height:180px;border-radius:50%;object-fit:cover;margin-bottom:20px;">` : ""}
+      // ── FALLBACK CONTENT ──
+      function buildFallbackHTML() {
+        return `
+          <div style="max-width:900px; margin:0 auto; padding:20px; text-align:center;">
+            ${char.image ? `<img src="${char.image}" style="width:220px;height:220px;border-radius:50%;object-fit:cover;margin:0 auto 30px;display:block;box-shadow:0 10px 40px rgba(0,0,0,0.5);">` : ""}
             <h1>${char.name || "Unnamed Character"}</h1>
-            <p>${char.desc || ""}</p>
-            <hr>
-            <p><b>Species:</b> ${char.species || "Unknown"}</p>
-            <p><b>Faction:</b> ${char.faction || "Unknown"}</p>
-            <p><b>Alignment:</b> ${char.alignment || "Unspecified"}</p>
-            <p><b>Status:</b> ${char.status || "Unknown"}</p>
-            <p><b>Age:</b> ${char.age || "Unknown"}</p>
-        </div>
-    `;
-}
+            <p style="font-size:1.15rem; opacity:0.92;">${char.desc || "No description available."}</p>
+            <hr style="border-color:#2a334a; margin:30px 0;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px; opacity:0.9;">
+              <div><b>Species:</b> ${char.species || "—"}</div>
+              <div><b>Faction:</b> ${char.faction || "—"}</div>
+              <div><b>Alignment:</b> ${char.alignment || "—"}</div>
+              <div><b>Status:</b> ${char.status || "—"}</div>
+              <div><b>Age:</b> ${char.age || "—"}</div>
+            </div>
+          </div>
+        `;
+      }
 
-/* =============================
-   RENDER
-============================= */
+      viewerTitle.textContent = char.name || "Unnamed Character";
+      viewerMeta.textContent  = `Last updated: ${char.updatedAt ? new Date(char.updatedAt).toLocaleString([], {dateStyle:"medium", timeStyle:"short"}) : "Unknown"}`;
 
-viewerTitle.textContent = char.name || "Unnamed Character";
-viewerMeta.textContent = `Last updated: ${char.updatedAt ? new Date(char.updatedAt).toLocaleString() : "Unknown"}`;
+      let safeHTML = "";
+      if (char.freeform && 'html' in char.freeform) {
+        safeHTML = sanitizeHTML(applyTemplate(char.freeform.html));
+      } else {
+        safeHTML = buildFallbackHTML();
+      }
 
-let safeHTML = char.freeform?.html
-    ? sanitizeHTML(applyTemplate(char.freeform.html))
-    : buildFallbackHTML();
+      const safeCSS = char.freeform?.css ? sanitizeCSS(char.freeform.css) : "";
 
-let safeCSS = char.freeform?.css
-    ? sanitizeCSS(char.freeform.css)
-    : "";
+      const iframe = document.createElement("iframe");
+      iframe.className = "viewer-frame";
 
-/* Create iframe */
+      // ── MAXIMUM RESTRICTIONS: no scripts, no same-origin, no popups, no forms ──
+      iframe.setAttribute("sandbox", "");
 
-const iframe = document.createElement("iframe");
-iframe.className = "viewer-frame";
-iframe.setAttribute("sandbox", "");
-
-iframe.srcdoc = `
+      iframe.srcdoc = `
 <!DOCTYPE html>
 <html>
 <head>
-<meta http-equiv="Content-Security-Policy"
-content="
-default-src 'none';
-style-src 'unsafe-inline';
-img-src https: data:;
-font-src https:;
-media-src https:;
-">
-<style>
-body{
-    background:#161a23;
-    color:white;
-    font-family:Inter, system-ui, sans-serif;
-    padding:30px;
-}
-${safeCSS}
-</style>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'none';
+    style-src 'unsafe-inline';
+    img-src https: data: blob:;
+    font-src https: data:;
+    media-src https: blob:;
+    object-src 'none';
+    child-src 'none';
+    frame-src 'none';
+    connect-src 'none';
+    base-uri 'none';
+  ">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    body {
+      background: #0f141e;
+      color: #f0f4ff;
+      font-family: Inter, system-ui, sans-serif;
+      padding: 40px;
+      line-height: 1.65;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3 { line-height: 1.3; }
+    img { max-width: 100%; height: auto; border-radius: 8px; }
+    pre, code {
+      background: #1a2235;
+      padding: 0.2em 0.4em;
+      border-radius: 6px;
+      font-family: Consolas, monospace;
+    }
+    pre { padding: 1.2em; overflow: auto; }
+    a { color: #8ab8ff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    ${safeCSS}
+  </style>
 </head>
 <body>
-${safeHTML}
+${safeHTML || '<p style="text-align:center; opacity:0.7; padding:60px 20px;">(No custom content defined yet)</p>'}
 </body>
-</html>
-`;
+</html>`;
 
-viewerContainer.appendChild(iframe);
+      viewerContainer.appendChild(iframe);
+      
+      // ── SAVE AS PNG (improved version) ──
+savePngBtn.onclick = async () => {
+  if (savePngBtn.disabled) return;
 
-</script>
+  savePngBtn.textContent = "Preparing...";
+  savePngBtn.disabled = true;
 
+  try {
+    // Give the iframe a moment to fully render fonts/images (common fix)
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    const canvas = await html2canvas(iframe, {
+      scale: window.devicePixelRatio > 1 ? 2 : 3,   // better quality on retina/high-dpi
+      useCORS: true,                                // attempt to load external images
+      allowTaint: true,                             // allow tainted canvas if needed
+      backgroundColor: null,                        // preserve transparency if any
+      logging: false,                               // reduce console noise
+      windowWidth: iframe.offsetWidth,              // match actual size
+      windowHeight: iframe.offsetHeight,
+      x: 0,
+      y: 0,
+      scrollX: 0,
+      scrollY: -iframe.contentWindow?.scrollY || 0  // try to capture scrolled content
+    });
+
+    // Optional: add timestamp to filename to avoid overwrites
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const safeName = (char.name || "character")
+      .replace(/[^a-z0-9]/gi, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '') || "unnamed";
+
+    const link = document.createElement("a");
+    link.download = `${safeName}-freeform-${timestamp}.png`;
+    link.href = canvas.toDataURL("image/png", 0.98);  // slight quality compression
+    link.click();
+
+    // Optional success feedback
+    savePngBtn.textContent = "Saved! ✓";
+    setTimeout(() => {
+      savePngBtn.textContent = "⬇ Save as PNG";
+    }, 2000);
+
+  } catch (err) {
+    console.error("html2canvas failed:", err);
+    alert(
+      "Capture failed.\n\n" +
+      "Common reasons:\n" +
+      "• External images/fonts not loading (try local/hosted ones)\n" +
+      "• Page too large/complex\n" +
+      "• Browser blocking (extensions/adblock)\n\n" +
+      "Check console (F12) for details."
+    );
+    savePngBtn.textContent = "Try Again";
+  }
+
+  savePngBtn.disabled = false;
+};};
+  </script>
 </body>
 </html>
