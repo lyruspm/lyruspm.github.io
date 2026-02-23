@@ -184,11 +184,12 @@
       color: white;
     }
 
-    /* ── Radial Menu (now automa/* ── Radial Menu (left-side fan / half-circle) ── */
+    /* ---- Radial Menu ----*/
+    
 :root {
-  --radial-distance: 74px;     /* distance from center – feel free to tweak */
-  --fan-start: 100deg;         /* start angle (from positive x-axis) – 90deg = straight up */
-  --fan-span: 160deg;          /* total arc → 180deg = perfect half, 140-170deg feels natural */
+  --radial-distance: 74px; 
+  --fan-start: 100deg;  
+  --fan-span: 160deg;
 }
 
 .radial-container {
@@ -266,8 +267,8 @@
 
 /* ── Automatic left-fan positioning ── */
 .radial-item {
-  --total: 4;                      /* ← update this when you add/remove items */
-  --index: calc(var(--i) - 1);     /* 0-based */
+  --total: 4;                      
+  --index: calc(var(--i) - 1); 
   --angle-step: calc(var(--fan-span) / (var(--total) - 1));
   --angle: calc(var(--fan-start) + var(--index) * var(--angle-step));
 
@@ -277,13 +278,14 @@
   transform: translate(var(--tx), var(--ty)) rotate(calc(-1 * var(--angle)));
 }
 
-/* Auto-assign --i via :nth-child (add more lines if you ever go >8 items) */
+
 .radial-item:nth-child(1) { --i: 1; }
 .radial-item:nth-child(2) { --i: 2; }
 .radial-item:nth-child(3) { --i: 3; }
 .radial-item:nth-child(4) { --i: 4; }
 .radial-item:nth-child(5) { --i: 5; }
 .radial-item:nth-child(6) { --i: 6; } { --i: 6; }
+    
     /* ── Bottom Nav ── */
     .bottom-nav {
       position: fixed;
@@ -311,6 +313,7 @@
     }
 
     /* ── FAB ── */
+    
     .fab {
       position: fixed;
       bottom: 90px;
@@ -357,20 +360,20 @@
   <a href="add-character.html" class="fab" id="fabBtn">+</a>
 
   <!-- Bottom Navigation -->
+  
   <nav class="bottom-nav">
     <a href="index.html"     class="nav-btn active">Home</a>
     <a href="events.html"    class="nav-btn">Events</a>
     <a href="character.html" class="nav-btn">Characters</a>
     <a href="world.html"     class="nav-btn">World</a>
-    <a href="#"              class="nav-btn">Folders</a>
+    <a href="items.html"              class="nav-btn">Items</a>
   </nav>
 
   <!-- Floating Action Button -->
+  
   <a href="add-character.html" class="fab" id="fabBtn">+</a>
 
   <script>
-    // ── Your existing JavaScript remains almost unchanged ──
-    // Only small cleanup & safer event delegation added
 
     const list = document.getElementById("characterList");
     const searchInput = document.getElementById("searchInput");
@@ -553,6 +556,7 @@
     searchInput.oninput = applyFilters;
 
     // Close all radial menus when clicking outside
+    
     document.addEventListener("click", e => {
       if (!e.target.closest(".radial-container")) {
         document.querySelectorAll(".radial-container.active")
@@ -560,7 +564,8 @@
       }
     });
 
-    // Refresh on focus (coming back from other pages)
+    // Refresh on focus
+    
     window.onfocus = () => {
       loadCharacters();
       buildFolderBar();
