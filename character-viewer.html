@@ -398,6 +398,12 @@ body{
         <div class="section-title">Relationships</div>
         <div class="section-content" id="vRelationships"></div>
     </div>
+    <div class="section" id="abilitiesSection">
+    <div class="section-title">Abilities</div>
+    <div class="section-content" id="vAbilities"></div>
+</div>
+
+    
 
 </div>
 
@@ -413,8 +419,9 @@ Download Character PNG
 /* LOAD CHARACTER */
 
 const chars = JSON.parse(localStorage.getItem("characters")) || [];
-const index = localStorage.getItem("viewingCharacterIndex");
-const char = chars[index];
+const viewingId = localStorage.getItem("viewingCharacterId");
+
+const char = chars.find(c => c.id === viewingId);
 
 if(!char){
     alert("Character not found");
@@ -445,6 +452,10 @@ const gradAHex = document.getElementById("gradAHex");
 const gradBHex = document.getElementById("gradBHex");
 const gradAngle = document.getElementById("gradAngle");
 const angleLabel = document.getElementById("angleLabel");
+
+const abilitiesSection = document.getElementById("abilitiesSection");
+const vAbilities = document.getElementById("vAbilities");
+
 
 /* CHARACTER LOAD */
 
@@ -486,6 +497,29 @@ vRelationships.innerHTML =
     .map(r => chip(`${r.name} — ${r.type}`))
     .join("") || "None";
 
+
+/* ABILITIES */
+
+if(!char.abilities || char.abilities.length === 0){
+    abilitiesSection.style.display = "none";
+} else {
+    vAbilities.innerHTML = char.abilities.map(a => `
+        <div class="stat-row">
+            <div>
+                <div style="font-weight:600">${a.name || "Unnamed Ability"}</div>
+                <div style="font-size:12px;opacity:.6">
+                    ${a.type || "Unknown Type"} • 
+                  
+                </div>
+            </div>
+        </div>
+        <div style="margin-bottom:14px; opacity:.8;">
+            ${a.description || ""}
+        </div>
+    `).join("");
+}
+
+
 /* COLOR UTILS */
 
 function hexToRgb(hex){
@@ -497,6 +531,7 @@ function hexToRgb(hex){
         b:num&255
     };
 }
+
 
 function getBrightness({r,g,b}){
     return (r*299 + g*587 + b*114)/1000;
