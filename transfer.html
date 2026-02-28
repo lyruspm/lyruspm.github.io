@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Selective Transfer - World Builder</title>
+
+<style>
+:root{
+  --bg:#0f1117;
+  --card:#1a1d26;
+  --accent:#5aa2ff;
+  --text:#e6e9ef;
+  --muted:#9aa3b2;
+  --radius:14px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif;}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  padding:20px;
+}
+
+.container{
+  width:100%;
+  max-width:700px;
+  background:var(--card);
+  padding:28px;
+  border-radius:var(--radius);
+  border:1px solid #2a2f3d;
+}
+
+h1{margin-bottom:20px;}
+.section{margin-bottom:30px;}
+
+input, textarea{
+  width:100%;
+  padding:10px;
+  border-radius:var(--radius);
+  border:none;
+  margin-top:8px;
+  background:#232734;
+  color:white;
+}
+
+textarea{
+  min-height:140px;
+  font-family:monospace;
+  resize:vertical;
+}
+
+button{
+  margin-top:12px;
+  padding:10px 16px;
+  border:none;
+  border-radius:var(--radius);
+  background:var(--accent);
+  color:white;
+  cursor:pointer;
+}
+
+.status{
+  margin-top:10px;
+  font-size:14px;
+  color:var(--muted);
+  white-space:pre-line;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Selective Character Transfer</h1>
+
+  <!-- EXPORT BY ID -->
+  <div class="section">
+    <h3>Export Character by ID</h3>
+    <input id="exportId" placeholder="Enter Character ID">
+    <button onclick="exportById()">Export This Character</button>
+  </div>
+
+  <!-- IMPORT FROM FILE BY ID -->
+  <div class="section">
+    <h3>Import Character From File (Select ID)</h3>
+    <input type="file" id="fileInput" accept=".json">
+    <input id="importId" placeholder="ID to import from file">
+    <button onclick="importFromFile()">Import This Character</button>
+  </div>
+
+  <!-- DIRECT PASTE IMPORT -->
+  <div class="section">
+    <h3>Paste Character JSON</h3>
+    <textarea id="jsonPaste" placeholder="Paste single character JSON here"></textarea>
+    <button onclick="importFromPaste()">Import Pasted Character</button>
+  </div>
+
+  <div id="status" class="status"></div>
+</div>
+
+<script>
+const statusDiv = document.getElementById("status");
+
+/* UTIL */
+function getCharacters(){
+  return JSON.parse(localStorage.getItem("characters")) || [];
+}
+
+function saveCharacters(chars){
+  localStorage.setItem("characters", JSON.stringify(chars));
+}
+
+function validateCharacter(obj){
+  if(!obj) return false;
+  if(typeof obj !== "object") return false;
+  if(!obj.id) return false;
+  if(!obj.name) obj.name = "Unnamed";
+  if(!Array.isArray(obj.relationships)) obj.relationships = [];
+  if(!Array.isArray(obj.customFields)) obj.customFields = [];
+  if(!Array.isArray(obj.abilities)) obj.abilities = [];
+  return true;
+}
+
+/* EXPORT BY ID */
+function exportById(){
+  const id = document.getElementById("exportId").value.trim();
+  if(!id) return;
+
+  const chars = getCharacters();
+  const char = chars.find(c => c.id === id);
+
+  if(!char){
+    statusDiv.textContent = "Character not found.";
+    return;
+  }
+
+  const blob = new Blob([JSON.stringify(char, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `character-${id}.json`;
+  a.click();
+
+  statusDiv.textContent = "Character exported.";
+}
+
+/* IMPORT FROM FILE BY ID */
+async function importFromFile(){
+  const fileInput = document.getElementById("fileInput");
+  const id = document.getElementById("importId").value.trim();
+  if(!fileInput.files[0] || !id) return;
+
+  try{
+    const text = await fileInput.files[0].text();
+    const json = JSON.parse(text);
+
+    let sourceCharacters = [];
+
+    if(Array.isArray(json)){
+      sourceCharacters = json;
+    } else if(json.data && Array.isArray(json.data.characters)){
+      sourceCharacters = json.data.characters;
+    } else if(json.id){
+      sourceCharacters = [json];
+    }
+
+    const found = sourceCharacters.find(c => c.id === id);
+
+    if(!found){
+      statusDiv.textContent = "ID not found in file.";
+      return;
+    }
+
+    if(!validateCharacter(found)){
+      statusDiv.textContent = "Invalid character structure.";
+      return;
+    }
+
+    let existing = getCharacters();
+    const index = existing.findIndex(c => c.id === id);
+
+    if(index !== -1){
+      existing[index] = found;
+      statusDiv.textContent = "Character updated.";
+    } else {
+      existing.push(found);
+      statusDiv.textContent = "Character added.";
+    }
+
+    saveCharacters(existing);
+
+  } catch(err){
+    console.error(err);
+    statusDiv.textContent = "Import failed.";
+  }
+
+  fileInput.value = "";
+}
+
+/* IMPORT FROM PASTE */
+function importFromPaste(){
+  const text = document.getElementById("jsonPaste").value.trim();
+  if(!text) return;
+
+  try{
+    const obj = JSON.parse(text);
+
+    if(!validateCharacter(obj)){
+      statusDiv.textContent = "Invalid character structure.";
+      return;
+    }
+
+    let existing = getCharacters();
+    const index = existing.findIndex(c => c.id === obj.id);
+
+    if(index !== -1){
+      existing[index] = obj;
+      statusDiv.textContent = "Character updated.";
+    } else {
+      existing.push(obj);
+      statusDiv.textContent = "Character added.";
+    }
+
+    saveCharacters(existing);
+
+  } catch(err){
+    console.error(err);
+    statusDiv.textContent = "Invalid JSON.";
+  }
+}
+</script>
+
+</body>
+</html>
