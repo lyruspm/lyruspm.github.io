@@ -184,12 +184,11 @@
       color: white;
     }
 
-    /* ---- Radial Menu ----*/
-    
+    /* ── Radial Menu ── */
 :root {
-  --radial-distance: 74px; 
-  --fan-start: 100deg;  
-  --fan-span: 160deg;
+  --radial-distance: 74px;     
+  --fan-start: 100deg;      
+  --fan-span: 160deg;   
 }
 
 .radial-container {
@@ -267,8 +266,8 @@
 
 /* ── Automatic left-fan positioning ── */
 .radial-item {
-  --total: 4;                      
-  --index: calc(var(--i) - 1); 
+  --total: 4;                      /* ← update this when you add/remove items */
+  --index: calc(var(--i) - 1);     /* 0-based */
   --angle-step: calc(var(--fan-span) / (var(--total) - 1));
   --angle: calc(var(--fan-start) + var(--index) * var(--angle-step));
 
@@ -278,14 +277,13 @@
   transform: translate(var(--tx), var(--ty)) rotate(calc(-1 * var(--angle)));
 }
 
-
+/* Auto-assign --i via :nth-child (add more lines if you ever go >8 items) */
 .radial-item:nth-child(1) { --i: 1; }
 .radial-item:nth-child(2) { --i: 2; }
 .radial-item:nth-child(3) { --i: 3; }
 .radial-item:nth-child(4) { --i: 4; }
 .radial-item:nth-child(5) { --i: 5; }
 .radial-item:nth-child(6) { --i: 6; } { --i: 6; }
-    
     /* ── Bottom Nav ── */
     .bottom-nav {
       position: fixed;
@@ -313,7 +311,6 @@
     }
 
     /* ── FAB ── */
-    
     .fab {
       position: fixed;
       bottom: 90px;
@@ -336,6 +333,24 @@
     .fab:active {
       transform: rotate(90deg) scale(0.92);
     }
+    
+ .transfer-btn {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--bg-accent);
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 13px;
+  transition: 0.15s;
+}
+
+.transfer-btn:hover {
+  background: var(--accent);
+  color: white;
+}
+
   </style>
 </head>
 <body>
@@ -343,7 +358,11 @@
   <header>
     <h1>Characters</h1>
     <input id="searchInput" type="text" placeholder="Search Characters or #Tags">
+    
+    <a href="transfer.html" class="transfer-btn">Data Transfer</a>
+    
   </header>
+    
 
   <div class="folder-bar" id="folderBar"></div>
 
@@ -356,24 +375,22 @@
     <div id="characterList"></div>
   </section>
   
+  
   <nav class="bottom-nav">...</nav>
   <a href="add-character.html" class="fab" id="fabBtn">+</a>
 
   <!-- Bottom Navigation -->
-  
   <nav class="bottom-nav">
     <a href="index.html"     class="nav-btn active">Home</a>
     <a href="events.html"    class="nav-btn">Events</a>
     <a href="character.html" class="nav-btn">Characters</a>
     <a href="world.html"     class="nav-btn">World</a>
-    <a href="items.html"              class="nav-btn">Items</a>
+    <a href="#"              class="nav-btn">Folders</a>
   </nav>
 
-  <!-- Floating Action Button -->
-  
-  <a href="add-character.html" class="fab" id="fabBtn">+</a>
-
   <script>
+    // ── Your existing JavaScript remains almost unchanged ──
+    // Only small cleanup & safer event delegation added
 
     const list = document.getElementById("characterList");
     const searchInput = document.getElementById("searchInput");
@@ -457,9 +474,18 @@
       const mainBtn = card.querySelector(".radial-main");
 
       mainBtn.onclick = (e) => {
-        e.stopPropagation();
-        radialContainer.classList.toggle("active");
-      };
+  e.stopPropagation();
+
+  const isAlreadyOpen = radialContainer.classList.contains("active");
+
+  // Close ALL open radials first logic
+  document.querySelectorAll(".radial-container.active")
+    .forEach(el => el.classList.remove("active"));
+
+  if (!isAlreadyOpen) {
+    radialContainer.classList.add("active");
+  }
+};
 
       // Action buttons
       const actions = {
@@ -556,7 +582,6 @@
     searchInput.oninput = applyFilters;
 
     // Close all radial menus when clicking outside
-    
     document.addEventListener("click", e => {
       if (!e.target.closest(".radial-container")) {
         document.querySelectorAll(".radial-container.active")
@@ -564,8 +589,7 @@
       }
     });
 
-    // Refresh on focus
-    
+    // Refresh on focus (coming back from other pages)
     window.onfocus = () => {
       loadCharacters();
       buildFolderBar();
